@@ -65,6 +65,7 @@ function App() {
   const [textAlign, setTextAlign] = useState('left')
   const [showDrawer, setShowDrawer] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [editingScript, setEditingScript] = useState(null)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showPrompter, setShowPrompter] = useState(false)
   const scrollContainerRef = useRef(null)
@@ -128,13 +129,24 @@ function App() {
   const saveScript = () => {
     if (!scriptName.trim() || !text.trim()) return
     
-    const newScript = {
-      id: Date.now(),
-      name: scriptName,
-      content: text,
+    if (editingScript) {
+      // Update existing script
+      setScripts(scripts.map(s => 
+        s.id === editingScript.id 
+          ? { ...s, name: scriptName, content: text }
+          : s
+      ))
+      setEditingScript(null)
+    } else {
+      // Create new script
+      const newScript = {
+        id: Date.now(),
+        name: scriptName,
+        content: text,
+      }
+      setScripts([...scripts, newScript])
     }
     
-    setScripts([...scripts, newScript])
     setScriptName('')
     setShowEditDialog(false)
   }
@@ -178,8 +190,16 @@ function App() {
 
   const newScript = () => {
     setCurrentScript(null)
+    setEditingScript(null)
     setText('')
     setScriptName('')
+    setShowEditDialog(true)
+  }
+
+  const editScript = (script) => {
+    setEditingScript(script)
+    setScriptName(script.name)
+    setText(script.content)
     setShowEditDialog(true)
   }
 
@@ -284,6 +304,13 @@ function App() {
                         color="primary"
                       >
                         Load
+                      </Button>
+                      <Button
+                        startIcon={<Edit />}
+                        onClick={() => editScript(script)}
+                        variant="outlined"
+                      >
+                        Edit
                       </Button>
                       <Button
                         startIcon={<Delete />}
@@ -396,7 +423,7 @@ function App() {
           fullWidth
           maxWidth="sm"
         >
-          <DialogTitle>New Script</DialogTitle>
+          <DialogTitle>{editingScript ? 'Edit Script' : 'New Script'}</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
