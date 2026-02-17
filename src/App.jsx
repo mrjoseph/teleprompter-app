@@ -94,17 +94,6 @@ function App() {
     }
   }, [scripts])
 
-  // Auto-save settings when they change for current script
-  useEffect(() => {
-    if (currentScript) {
-      setScripts(scripts.map(s => 
-        s.id === currentScript.id 
-          ? { ...s, fontSize, scrollSpeed }
-          : s
-      ))
-    }
-  }, [fontSize, scrollSpeed])
-
   // Auto-scroll
   useEffect(() => {
     if (isScrolling && scrollContainerRef.current) {
@@ -158,8 +147,6 @@ function App() {
               ...s, 
               name: scriptName, 
               content: editingScript.isGroup ? '' : text,
-              fontSize, 
-              scrollSpeed,
               parentId: parentIdValue,
               isGroup: editingScript.isGroup
             }
@@ -172,8 +159,6 @@ function App() {
         id: Date.now(),
         name: scriptName,
         content: isCreatingGroup ? '' : text,
-        fontSize: fontSize,
-        scrollSpeed: scrollSpeed,
         parentId: parentIdValue,
         isGroup: isCreatingGroup,
       }
@@ -195,9 +180,6 @@ function App() {
       // Load the script
       setCurrentScript(script)
       setText(script.content)
-      // Load saved settings for this script
-      if (script.fontSize) setFontSize(script.fontSize)
-      if (script.scrollSpeed) setScrollSpeed(script.scrollSpeed)
       setShowDrawer(false)
       setShowPrompter(true)
     }
