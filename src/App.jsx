@@ -486,6 +486,7 @@ function App() {
               <Slider
                 value={scrollSpeed}
                 onChange={(_, val) => setScrollSpeed(val)}
+                onChangeCommitted={(_, val) => setScrollSpeed(val)}
                 min={0.1}
                 max={5}
                 step={0.1}
@@ -500,6 +501,7 @@ function App() {
               <Slider
                 value={fontSize}
                 onChange={(_, val) => setFontSize(val)}
+                onChangeCommitted={(_, val) => setFontSize(val)}
                 min={16}
                 max={64}
                 step={4}
