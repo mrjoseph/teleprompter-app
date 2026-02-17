@@ -549,20 +549,24 @@ function App() {
                 />
                 
                 {!isCreatingGroup && (
-                  <TextField
-                    select
-                    fullWidth
-                    label="Add to Group (optional)"
-                    value={selectedParentId || ''}
-                    onChange={(e) => setSelectedParentId(e.target.value || null)}
-                    SelectProps={{ native: true }}
-                    sx={{ mb: 2 }}
-                  >
-                    <option value="">None - Standalone Script</option>
-                    {scripts.filter(s => s.isGroup && (!currentGroupId || s.id === currentGroupId)).map(group => (
-                      <option key={group.id} value={group.id}>{group.name}</option>
-                    ))}
-                  </TextField>
+                  <>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Add to Group (optional)
+                    </Typography>
+                    <TextField
+                      select
+                      fullWidth
+                      value={selectedParentId || ''}
+                      onChange={(e) => setSelectedParentId(e.target.value || null)}
+                      SelectProps={{ native: true }}
+                      sx={{ mb: 2 }}
+                    >
+                      <option value="">None - Standalone Script</option>
+                      {scripts.filter(s => s.isGroup && (!currentGroupId || s.id === currentGroupId)).map(group => (
+                        <option key={group.id} value={group.id}>{group.name}</option>
+                      ))}
+                    </TextField>
+                  </>
                 )}
               </>
             )}
