@@ -27,6 +27,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  Chip,
 } from '@mui/material'
 import {
   PlayArrow,
@@ -478,9 +479,10 @@ function App() {
           <DialogTitle>Settings</DialogTitle>
           <DialogContent>
             <Box sx={{ pt: 2 }}>
-              <Typography gutterBottom>
-                Scroll Speed
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                <Typography>Scroll Speed</Typography>
+                <Chip label={scrollSpeed} size="small" color="primary" />
+              </Stack>
               <Slider
                 value={scrollSpeed}
                 onChange={(_, val) => setScrollSpeed(val)}
@@ -491,9 +493,10 @@ function App() {
                 valueLabelDisplay="auto"
               />
               
-              <Typography gutterBottom sx={{ mt: 3 }}>
-                Font Size
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1, mt: 3 }}>
+                <Typography>Font Size</Typography>
+                <Chip label={`${fontSize}px`} size="small" color="primary" />
+              </Stack>
               <Slider
                 value={fontSize}
                 onChange={(_, val) => setFontSize(val)}
