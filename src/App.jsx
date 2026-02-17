@@ -47,7 +47,9 @@ import {
   FormatAlignLeft,
   FormatAlignCenter,
   FormatAlignRight,
-  SwapVert
+  SwapVert,
+  Folder,
+  ArrowBack
 } from '@mui/icons-material'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
@@ -69,6 +71,9 @@ function App() {
   const [editingScript, setEditingScript] = useState(null)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showPrompter, setShowPrompter] = useState(false)
+  const [currentGroupId, setCurrentGroupId] = useState(null)
+  const [selectedParentId, setSelectedParentId] = useState(null)
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false)
   const scrollContainerRef = useRef(null)
   const animationRef = useRef(null)
   const scrollAccumulatorRef = useRef(0)
@@ -139,13 +144,25 @@ function App() {
   })
 
   const saveScript = () => {
-    if (!scriptName.trim() || !text.trim()) return
+    if (!scriptName.trim()) return
+    if (!isCreatingGroup && !editingScript?.isGroup && !text.trim()) return
+    
+    // Convert parentId to number or null
+    const parentIdValue = selectedParentId ? Number(selectedParentId) : null
     
     if (editingScript) {
       // Update existing script
       setScripts(scripts.map(s => 
         s.id === editingScript.id 
-          ? { ...s, name: scriptName, content: text, fontSize, scrollSpeed }
+          ? { 
+              ...s, 
+              name: scriptName, 
+              content: editingScript.isGroup ? '' : text,
+              fontSize, 
+              scrollSpeed,
+              parentId: parentIdValue,
+              isGroup: editingScript.isGroup
+            }
           : s
       ))
       setEditingScript(null)
@@ -154,29 +171,55 @@ function App() {
       const newScript = {
         id: Date.now(),
         name: scriptName,
-        content: text,
+        content: isCreatingGroup ? '' : text,
         fontSize: fontSize,
         scrollSpeed: scrollSpeed,
+        parentId: parentIdValue,
+        isGroup: isCreatingGroup,
       }
       setScripts([...scripts, newScript])
     }
     
     setScriptName('')
+    setText('')
+    setSelectedParentId(null)
+    setIsCreatingGroup(false)
     setShowEditDialog(false)
   }
 
   const loadScript = (script) => {
-    setCurrentScript(script)
-    setText(script.content)
-    // Load saved settings for this script
-    if (script.fontSize) setFontSize(script.fontSize)
-    if (script.scrollSpeed) setScrollSpeed(script.scrollSpeed)
-    setShowDrawer(false)
-    setShowPrompter(true)
+    if (script.isGroup) {
+      // Navigate into the group
+      setCurrentGroupId(script.id)
+    } else {
+      // Load the script
+      setCurrentScript(script)
+      setText(script.content)
+      // Load saved settings for this script
+      if (script.fontSize) setFontSize(script.fontSize)
+      if (script.scrollSpeed) setScrollSpeed(script.scrollSpeed)
+      setShowDrawer(false)
+      setShowPrompter(true)
+    }
   }
 
   const deleteScript = (id) => {
-    setScripts(scripts.filter(s => s.id !== id))
+    const scriptToDelete = scripts.find(s => s.id === id)
+    
+    if (scriptToDelete?.isGroup) {
+      // If deleting a group, also delete all children
+      const childIds = scripts.filter(s => s.parentId === id).map(s => s.id)
+      setScripts(scripts.filter(s => s.id !== id && !childIds.includes(s.id)))
+      
+      // Navigate back if we're currently viewing this group
+      if (currentGroupId === id) {
+        setCurrentGroupId(null)
+      }
+    } else {
+      // Just delete the single script
+      setScripts(scripts.filter(s => s.id !== id))
+    }
+    
     if (currentScript?.id === id) {
       setCurrentScript(null)
       setText('')
@@ -216,7 +259,9 @@ function App() {
   const editScript = (script) => {
     setEditingScript(script)
     setScriptName(script.name)
-    setText(script.content)
+    setText(script.content || '')
+    setIsCreatingGroup(script.isGroup || false)
+    setSelectedParentId(script.parentId || null)
     setShowEditDialog(true)
   }
 
@@ -279,9 +324,19 @@ function App() {
             <Stack spacing={3}>
               <Card>
                 <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    My Scripts
-                  </Typography>
+                  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+                    {currentGroupId && (
+                      <IconButton onClick={() => setCurrentGroupId(null)} size="small">
+                        <ArrowBack />
+                      </IconButton>
+                    )}
+                    <Typography variant="h5" gutterBottom sx={{ mb: 0 }}>
+                      {currentGroupId 
+                        ? scripts.find(s => s.id === currentGroupId)?.name || 'Group'
+                        : 'My Scripts'
+                      }
+                    </Typography>
+                  </Stack>
                   <Button
                     fullWidth
                     variant="contained"
@@ -294,51 +349,69 @@ function App() {
                 </CardContent>
               </Card>
 
-              {scripts.length === 0 ? (
+              {scripts.filter(s => s.parentId === currentGroupId).length === 0 ? (
                 <Card>
                   <CardContent>
                     <Typography variant="body1" color="text.secondary" align="center">
-                      No scripts yet. Create your first script!
+                      {currentGroupId ? 'No scripts in this group yet.' : 'No scripts yet. Create your first script!'}
                     </Typography>
                   </CardContent>
                 </Card>
               ) : (
-                scripts.map((script) => (
-                  <Card key={script.id}>
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        {script.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {script.content.substring(0, 100)}...
-                      </Typography>
-                    </CardContent>
-                    <CardActions>
-                      <Button
-                        startIcon={<PlayArrow />}
-                        onClick={() => loadScript(script)}
-                        variant="contained"
-                        color="primary"
-                      >
-                        Load
-                      </Button>
-                      <Button
-                        startIcon={<Edit />}
-                        onClick={() => editScript(script)}
-                        variant="outlined"
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        startIcon={<Delete />}
-                        onClick={() => deleteScript(script.id)}
-                        color="error"
-                      >
-                        Delete
-                      </Button>
-                    </CardActions>
-                  </Card>
-                ))
+                scripts
+                  .filter(s => s.parentId === currentGroupId)
+                  .map((script) => {
+                    const childCount = script.isGroup 
+                      ? scripts.filter(s => s.parentId === script.id).length 
+                      : 0
+                    
+                    return (
+                      <Card key={script.id}>
+                        <CardContent>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            {script.isGroup && <Folder color="primary" />}
+                            <Typography variant="h6" gutterBottom sx={{ mb: 0, flexGrow: 1 }}>
+                              {script.name}
+                            </Typography>
+                            {script.isGroup && (
+                              <Chip label={`${childCount} script${childCount !== 1 ? 's' : ''}`} size="small" />
+                            )}
+                          </Stack>
+                          {!script.isGroup && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                              {script.content.substring(0, 100)}{script.content.length > 100 ? '...' : ''}
+                            </Typography>
+                          )}
+                        </CardContent>
+                        <CardActions>
+                          <Button
+                            startIcon={script.isGroup ? <Folder /> : <PlayArrow />}
+                            onClick={() => loadScript(script)}
+                            variant="contained"
+                            color="primary"
+                          >
+                            {script.isGroup ? 'Open' : 'Load'}
+                          </Button>
+                          {!script.isGroup && (
+                            <Button
+                              startIcon={<Edit />}
+                              onClick={() => editScript(script)}
+                              variant="outlined"
+                            >
+                              Edit
+                            </Button>
+                          )}
+                          <Button
+                            startIcon={<Delete />}
+                            onClick={() => deleteScript(script.id)}
+                            color="error"
+                          >
+                            Delete
+                          </Button>
+                        </CardActions>
+                      </Card>
+                    )
+                  })
               )}
             </Stack>
           </Container>
@@ -436,33 +509,82 @@ function App() {
         {/* New Script Dialog */}
         <Dialog
           open={showEditDialog}
-          onClose={() => setShowEditDialog(false)}
+          onClose={() => {
+            setShowEditDialog(false)
+            setSelectedParentId(null)
+            setIsCreatingGroup(false)
+          }}
           fullWidth
           maxWidth="sm"
         >
-          <DialogTitle>{editingScript ? 'Edit Script' : 'New Script'}</DialogTitle>
+          <DialogTitle>{editingScript ? (editingScript.isGroup ? 'Edit Group' : 'Edit Script') : 'New Script'}</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
               margin="dense"
-              label="Script Name"
+              label={editingScript?.isGroup ? "Group Name" : "Script Name"}
               fullWidth
               value={scriptName}
               onChange={(e) => setScriptName(e.target.value)}
               sx={{ mb: 2 }}
             />
-            <TextField
-              margin="dense"
-              label="Script Content"
-              fullWidth
-              multiline
-              rows={10}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
+            
+            {!editingScript && (
+              <>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={isCreatingGroup}
+                      onChange={(e) => {
+                        setIsCreatingGroup(e.target.checked)
+                        if (e.target.checked) {
+                          setSelectedParentId(null)
+                          setText('')
+                        }
+                      }}
+                    />
+                  }
+                  label="Create as group (folder for multiple scripts)"
+                  sx={{ mb: 2 }}
+                />
+                
+                {!isCreatingGroup && (
+                  <TextField
+                    select
+                    fullWidth
+                    label="Add to Group (optional)"
+                    value={selectedParentId || ''}
+                    onChange={(e) => setSelectedParentId(e.target.value || null)}
+                    SelectProps={{ native: true }}
+                    sx={{ mb: 2 }}
+                  >
+                    <option value="">None - Standalone Script</option>
+                    {scripts.filter(s => s.isGroup && (!currentGroupId || s.id === currentGroupId)).map(group => (
+                      <option key={group.id} value={group.id}>{group.name}</option>
+                    ))}
+                  </TextField>
+                )}
+              </>
+            )}
+            
+            {!isCreatingGroup && !editingScript?.isGroup && (
+              <TextField
+                margin="dense"
+                label="Script Content"
+                fullWidth
+                multiline
+                rows={10}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+            )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setShowEditDialog(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setShowEditDialog(false)
+              setSelectedParentId(null)
+              setIsCreatingGroup(false)
+            }}>Cancel</Button>
             <Button onClick={saveScript} variant="contained">
               Save
             </Button>
