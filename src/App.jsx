@@ -598,9 +598,11 @@ function App() {
                 SelectProps={{ native: true }}
                 sx={{ mb: 3 }}
               >
-                {Array.from({ length: 50 }, (_, i) => ((i + 1) * 0.1).toFixed(1)).map(speed => (
-                  <option key={speed} value={speed}>{speed}</option>
-                ))}
+                {Array.from({ length: 50 }, (_, i) => {
+                  const speed = (i + 1) * 0.1;
+                  const displayValue = speed % 1 === 0 ? speed.toFixed(0) : speed.toFixed(1);
+                  return <option key={speed} value={speed}>{displayValue}</option>
+                }).map(option => option)}
               </TextField>
               
               <Typography variant="body2" sx={{ mb: 1 }}>
