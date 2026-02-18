@@ -587,35 +587,37 @@ function App() {
           <DialogTitle>Settings</DialogTitle>
           <DialogContent>
             <Box sx={{ pt: 2 }}>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                <Typography>Scroll Speed</Typography>
-                <Chip label={scrollSpeed} size="small" color="primary" />
-              </Stack>
-              <Slider
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Scroll Speed
+              </Typography>
+              <TextField
+                select
+                fullWidth
                 value={scrollSpeed}
-                onChange={(_, val) => setScrollSpeed(val)}
-                onChangeCommitted={(_, val) => setScrollSpeed(val)}
-                min={0.1}
-                max={5}
-                step={0.1}
-                marks
-                valueLabelDisplay="auto"
-              />
+                onChange={(e) => setScrollSpeed(Number(e.target.value))}
+                SelectProps={{ native: true }}
+                sx={{ mb: 3 }}
+              >
+                {Array.from({ length: 50 }, (_, i) => ((i + 1) * 0.1).toFixed(1)).map(speed => (
+                  <option key={speed} value={speed}>{speed}</option>
+                ))}
+              </TextField>
               
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1, mt: 3 }}>
-                <Typography>Font Size</Typography>
-                <Chip label={`${fontSize}px`} size="small" color="primary" />
-              </Stack>
-              <Slider
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Font Size
+              </Typography>
+              <TextField
+                select
+                fullWidth
                 value={fontSize}
-                onChange={(_, val) => setFontSize(val)}
-                onChangeCommitted={(_, val) => setFontSize(val)}
-                min={16}
-                max={64}
-                step={4}
-                marks
-                valueLabelDisplay="auto"
-              />
+                onChange={(e) => setFontSize(Number(e.target.value))}
+                SelectProps={{ native: true }}
+                sx={{ mb: 3 }}
+              >
+                {Array.from({ length: 13 }, (_, i) => 16 + i * 4).map(size => (
+                  <option key={size} value={size}>{size}px</option>
+                ))}
+              </TextField>
 
               <Typography gutterBottom sx={{ mt: 3 }}>
                 Text Alignment
